@@ -1,9 +1,10 @@
 %module wiringpi
+%include "pybuffer.i"
 
 %{
 #if PY_MAJOR_VERSION >= 3
-#define PyInt_AS_LONG PyLong_AsLong
-#define PyString_FromStringAndSize PyBytes_FromStringAndSize
+  //#define PyInt_AS_LONG PyLong_AsLong
+  //#define PyString_FromStringAndSize PyBytes_FromStringAndSize
 #endif
 
 #include "WiringPi/wiringPi/wiringPi.h"
@@ -46,10 +47,8 @@
 %}
 
 %apply unsigned char { uint8_t };
-%typemap(in) (unsigned char *data, int len) {
-      $1 = (unsigned char *) PyString_AsString($input);
-      $2 = PyString_Size($input);
-};
+
+%pybuffer_mutable_binary(unsigned char *data, int len);
 
 // Grab a Python function object as a Python object.
 %typemap(in) PyObject *pyfunc {
@@ -272,13 +271,8 @@ static void wiringPiISRWrapper(int pin, int mode, PyObject *PyFunc);
   free((unsigned char *) $1);
 }
 
-%typemap(in) (unsigned char *data, int len) {
-      $1 = (unsigned char *) PyString_AsString($input);
-      $2 = PyString_Size($input);
-};
-
 %typemap(argout) (unsigned char *data) {
-      $result = SWIG_Python_AppendOutput($result, PyString_FromStringAndSize((char *) $1, result));
+  $result = SWIG_Python_AppendOutput($result, PyBytes_FromStringAndSize((char *) $1, result));
 };
 
 %include "bindings.i"
